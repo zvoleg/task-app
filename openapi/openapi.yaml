@@ -1,0 +1,261 @@
+openapi: 3.0.3
+info:
+  title: Swagger Petstore - OpenAPI 3.0
+  description: A simple example of TODO application
+  contact:
+    email: oleg.zaitsevv@gmail.com
+  version: 0.0.1
+servers:
+  - url: http://localhost:8000/api/v1
+tags:
+  - name: task
+    description: task manager part
+    
+paths:
+  /task:
+    post:
+      tags:
+        - task
+      summary: Creat a new task
+      description: create a new task with the given parameters
+      operationId: createTask
+      requestBody:
+        description: Create a new task
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskBody'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: Error with body parsing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      tags:
+        - task
+      summary: Get a list of tasks
+      description: Get a list of tasks by filter parameters
+      operationId: getTaskList
+      parameters:
+        - name: filterParameters
+          description: The filter parameters for getting the list of tasks
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/FilterParameters'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskList'
+        '400':
+          description: Error with body parsing or id parsing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /task/{taskId}:
+    get:
+      tags:
+        - task
+      summary: Get a task
+      description: get a task by its id
+      operationId: getTask
+      parameters:
+        - name: taskId
+          description: An id of task wich will be update
+          in: path
+          required: true
+          schema:
+            type: string
+            format: guid
+            example: "09a93857-a031-4695-ad81-9989a3df1169"
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: Error with body parsing or id parsing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: A task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags:
+        - task
+      summary: Update a task
+      description: update a task by its id with the given parameters
+      operationId: updateTask
+      parameters:
+        - name: taskId
+          description: An id of task wich will be update
+          in: path
+          required: true
+          schema:
+            type: string
+            format: guid
+            example: "09a93857-a031-4695-ad81-9989a3df1169"
+      requestBody:
+        description: parameters for updating of task
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Task'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: Error with body parsing or id parsing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: A task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - task
+      summary: Delete a task
+      description: delete a task by its id
+      operationId: deleteTask
+      parameters:
+        - name: taskId
+          description: An id of task wich will be update
+          in: path
+          required: true
+          schema:
+            type: string
+            format: guid
+            example: "09a93857-a031-4695-ad81-9989a3df1169"
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: Error with body parsing or id parsing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: A task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    CreateTaskBody:
+      type: object
+      required:
+        - name
+        - status
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum:
+            - opened
+            - closed
+    Task:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: guid
+          example: "09a93857-a031-4695-ad81-9989a3df1169"
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum:
+            - opened
+            - closed
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-03-19T19:11:00Z"
+        updateAt:
+          type: string
+          format: date-time
+          example: "2023-03-19T19:11:00Z"
+    TaskList:
+      type: object
+      required:
+        - amount
+        - entities
+      properties:
+        amount: 
+          type: integer
+        entities: 
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+    FilterParameters:
+      type: object
+      properties:
+        name:
+          type: string
+        createdAtFrom:
+          type: string
+          format: date-time
+          example: "2023-03-19T19:11:00Z"
+        createdAtTo:
+          type: string
+          format: date-time
+          example: "2023-03-19T19:11:00Z"
+        updatedAtFrom:
+          type: string
+          format: date-time
+          example: "2023-03-19T19:11:00Z"
+        updatedAtTo:
+          type: string
+          format: date-time
+          example: "2023-03-19T19:11:00Z"
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
