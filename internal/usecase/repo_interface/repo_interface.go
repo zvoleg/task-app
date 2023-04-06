@@ -17,19 +17,18 @@ type Repository interface {
 }
 
 var (
-	ErrRepoInternal      = errors.New("internal repository error")
 	ErrRepoAlreadyExists = errors.New("entity alredy excists")
 	ErrRepoNotFound      = errors.New("entity not found")
 )
 
-type InternalRepoErr struct {
+type ErrRepoInternal struct {
 	Err error
 }
 
-func (e InternalRepoErr) Error() string {
+func (e ErrRepoInternal) Error() string {
 	return fmt.Sprintf("repo: internal repo error: %s", e.Err.Error())
 }
 
-func (e InternalRepoErr) Unwrap() error {
+func (e ErrRepoInternal) Unwrap() error {
 	return e.Err
 }

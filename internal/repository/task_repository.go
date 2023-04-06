@@ -34,7 +34,7 @@ func (r TaskRepository) CreateTask(task entity.Task) (*entity.Task, error) {
 		Suffix("RETURNING *").
 		ToSql()
 	if err != nil {
-		return nil, repo_interface.InternalRepoErr{Err: err}
+		return nil, repo_interface.ErrRepoInternal{Err: err}
 	}
 
 	row := r.db.QueryRowx(sql, args...)
@@ -52,16 +52,23 @@ func (r TaskRepository) CreateTask(task entity.Task) (*entity.Task, error) {
 
 func (r TaskRepository) DeleteTask(taskId uuid.UUID) error {
 	sql, args, err := squirrel.Update(TASK_TABLE_NAME).
-		Set("isDelted", 1).
+		Set("isDeleted", 1).
 		Where(squirrel.Eq{"taskId": taskId.String()}).
 		ToSql()
 	if err != nil {
-		return repo_interface.InternalRepoErr{Err: err}
+		return repo_interface.ErrRepoInternal{Err: err}
 	}
 
-	_, err = r.db.Exec(sql, args...)
+	res, err := r.db.Exec(sql, args...)
 	if err != nil {
 		return wrapErr(err)
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return wrapErr(err)
+	} else if rows == 0 {
+		return repo_interface.ErrRepoNotFound
 	}
 
 	return nil
@@ -73,7 +80,7 @@ func (r TaskRepository) GetTask(taskId uuid.UUID) (*entity.Task, error) {
 		Where(squirrel.Eq{"taskId": taskId.String()}).
 		ToSql()
 	if err != nil {
-		return nil, repo_interface.InternalRepoErr{Err: err}
+		return nil, repo_interface.ErrRepoInternal{Err: err}
 	}
 
 	row := r.db.QueryRowx(sql, args...)
@@ -121,7 +128,7 @@ func (r TaskRepository) GetTaskList(params entity.FilterParameters) ([]entity.Ta
 
 	sql, args, err := sqlBuilder.ToSql()
 	if err != nil {
-		return nil, repo_interface.InternalRepoErr{Err: err}
+		return nil, repo_interface.ErrRepoInternal{Err: err}
 	}
 
 	rows, err := r.db.Queryx(sql, args...)
@@ -152,7 +159,7 @@ func (r TaskRepository) UpdateTask(taskId uuid.UUID, task entity.Task) (*entity.
 		Where(squirrel.Eq{"taskId": taskId.String()}).
 		ToSql()
 	if err != nil {
-		return nil, repo_interface.InternalRepoErr{Err: err}
+		return nil, repo_interface.ErrRepoInternal{Err: err}
 	}
 
 	row := r.db.QueryRowx(sql, args...)
@@ -215,11 +222,11 @@ func wrapErr(err error) error {
 		case sqlite3.ErrConstraint:
 			return repo_interface.ErrRepoAlreadyExists
 		default:
-			return repo_interface.InternalRepoErr{Err: err}
+			return repo_interface.ErrRepoInternal{Err: err}
 		}
 	} else if errors.Is(err, sql.ErrNoRows) {
 		return repo_interface.ErrRepoNotFound
 	} else {
-		return repo_interface.InternalRepoErr{Err: err}
+		return repo_interface.ErrRepoInternal{Err: err}
 	}
 }

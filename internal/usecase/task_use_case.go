@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"errors"
-	"fmt"
 	"task-app/internal/entity"
 	"task-app/internal/usecase/repo_interface"
 
@@ -70,13 +69,14 @@ var (
 )
 
 func wrapErr(err error) error {
-	switch err {
-	case repo_interface.ErrRepoInternal:
-		return fmt.Errorf("%w", ErrUcInternal)
-	case repo_interface.ErrRepoNotFound:
-		return fmt.Errorf("%w", ErrUcNotFound)
-	case repo_interface.ErrRepoAlreadyExists:
-		return fmt.Errorf("%w", ErrUcAlreadyExists)
+	var errRepoInternal repo_interface.ErrRepoInternal
+	if errors.As(err, &errRepoInternal) {
+		return ErrUcInternal
+	} else if errors.Is(err, repo_interface.ErrRepoNotFound) {
+		return ErrUcNotFound
+	} else if errors.Is(err, repo_interface.ErrRepoAlreadyExists) {
+		return ErrUcAlreadyExists
+	} else {
+		return nil
 	}
-	return nil
 }
