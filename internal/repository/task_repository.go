@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"task-app/internal/entity"
-	"task-app/internal/usecase/repo_interface"
+	"task-app/internal/usecase"
 	"time"
 
 	"github.com/Masterminds/squirrel"
@@ -19,7 +19,7 @@ type TaskRepository struct {
 	db *sqlx.DB
 }
 
-func New(db *sqlx.DB) repo_interface.Repository {
+func New(db *sqlx.DB) usecase.Repository {
 	return TaskRepository{
 		db: db,
 	}
@@ -34,7 +34,7 @@ func (r TaskRepository) CreateTask(task entity.Task) (*entity.Task, error) {
 		Suffix("RETURNING *").
 		ToSql()
 	if err != nil {
-		return nil, repo_interface.ErrRepoInternal{Err: err}
+		return nil, usecase.ErrRepoInternal{Err: err}
 	}
 
 	row := r.db.QueryRowx(sql, args...)
@@ -56,7 +56,7 @@ func (r TaskRepository) DeleteTask(taskId uuid.UUID) error {
 		Where(squirrel.Eq{"taskId": taskId.String()}).
 		ToSql()
 	if err != nil {
-		return repo_interface.ErrRepoInternal{Err: err}
+		return usecase.ErrRepoInternal{Err: err}
 	}
 
 	res, err := r.db.Exec(sql, args...)
@@ -68,7 +68,7 @@ func (r TaskRepository) DeleteTask(taskId uuid.UUID) error {
 	if err != nil {
 		return wrapErr(err)
 	} else if rows == 0 {
-		return repo_interface.ErrRepoNotFound
+		return usecase.ErrRepoNotFound
 	}
 
 	return nil
@@ -80,7 +80,7 @@ func (r TaskRepository) GetTask(taskId uuid.UUID) (*entity.Task, error) {
 		Where(squirrel.Eq{"taskId": taskId.String()}).
 		ToSql()
 	if err != nil {
-		return nil, repo_interface.ErrRepoInternal{Err: err}
+		return nil, usecase.ErrRepoInternal{Err: err}
 	}
 
 	row := r.db.QueryRowx(sql, args...)
@@ -91,7 +91,7 @@ func (r TaskRepository) GetTask(taskId uuid.UUID) (*entity.Task, error) {
 	}
 
 	if task.IsDeleted == 1 {
-		return nil, repo_interface.ErrRepoNotFound
+		return nil, usecase.ErrRepoNotFound
 	}
 
 	entityTask := toEntityTask(task)
@@ -128,7 +128,7 @@ func (r TaskRepository) GetTaskList(params entity.FilterParameters) ([]entity.Ta
 
 	sql, args, err := sqlBuilder.ToSql()
 	if err != nil {
-		return nil, repo_interface.ErrRepoInternal{Err: err}
+		return nil, usecase.ErrRepoInternal{Err: err}
 	}
 
 	rows, err := r.db.Queryx(sql, args...)
@@ -159,7 +159,7 @@ func (r TaskRepository) UpdateTask(taskId uuid.UUID, task entity.Task) (*entity.
 		Where(squirrel.Eq{"taskId": taskId.String()}).
 		ToSql()
 	if err != nil {
-		return nil, repo_interface.ErrRepoInternal{Err: err}
+		return nil, usecase.ErrRepoInternal{Err: err}
 	}
 
 	row := r.db.QueryRowx(sql, args...)
@@ -220,13 +220,13 @@ func wrapErr(err error) error {
 	if errors.As(err, &liteErr) {
 		switch liteErr.Code {
 		case sqlite3.ErrConstraint:
-			return repo_interface.ErrRepoAlreadyExists
+			return usecase.ErrRepoAlreadyExists
 		default:
-			return repo_interface.ErrRepoInternal{Err: err}
+			return usecase.ErrRepoInternal{Err: err}
 		}
 	} else if errors.Is(err, sql.ErrNoRows) {
-		return repo_interface.ErrRepoNotFound
+		return usecase.ErrRepoNotFound
 	} else {
-		return repo_interface.ErrRepoInternal{Err: err}
+		return usecase.ErrRepoInternal{Err: err}
 	}
 }
